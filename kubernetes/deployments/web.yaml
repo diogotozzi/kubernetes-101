@@ -1,0 +1,26 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: pod-web
+  name: pod-web
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: pod-web
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: pod-web
+        version: v1
+    spec:
+      containers:
+      - name: nginx
+        image: registry.gitlab.com/diogotozzi/kubernetes-101/nginx:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+        - name: registry.gitlab.com

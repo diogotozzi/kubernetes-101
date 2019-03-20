@@ -1,0 +1,44 @@
+image: docker:latest
+services:
+  - docker:dind
+
+stages:
+  - image
+  - deploy
+
+image-nginx:
+  stage: image
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  - docker build -t registry.gitlab.com/diogotozzi/kubernetes-101/nginx:$CI_COMMIT_SHA -f Dockerfile .
+  - docker push registry.gitlab.com/diogotozzi/kubernetes-101/nginx:$CI_COMMIT_SHA
+  only:
+    - master
+
+kubernetes-deploy:
+  image: google/cloud-sdk
+  stage: deploy
+  script:
+  - echo "$GOOGLE_KEY" > key.json
+  - gcloud auth activate-service-account --key-file key.json
+  - gcloud config set compute/region us-central1
+  - gcloud config set project affable-relic-196500
+  - gcloud container clusters get-credentials cluster-web --region=us-central1
+  - kubectl delete secret --ignore-not-found=true registry.gitlab.com
+  - kubectl create secret docker-registry registry.gitlab.com --docker-server=https://registry.gitlab.com --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWD --docker-email=$REGISTRY_EMAIL
+  - |
+    cat <<EOF > patch.yaml
+    spec:
+      template:
+        spec:
+          containers:
+            - name: nginx
+              image: registry.gitlab.com/diogotozzi/kubernetes-101/nginx:$CI_COMMIT_SHA
+    EOF
+
+    kubectl patch --local -o yaml -f kubernetes/deployments/web.yaml -p "$(cat patch.yaml)" > web.yaml
+
+    mv web.yaml kubernetes/deployments/web.yaml
+  - kubectl apply --recursive -f kubernetes
+  only:
+    - master
