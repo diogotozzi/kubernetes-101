@@ -44,6 +44,7 @@ kubernetes-deploy:
     - master
 
 digitalocean-deploy:
+  image: digitalocean/digitalocean-cloud-controller-manager
   stage: deploy
   script:
   - echo "$DIGITALOCEAN_KEY" > key.yaml
