@@ -48,8 +48,8 @@ digitalocean-deploy:
   stage: deploy
   script:
   - echo "$DIGITALOCEAN_KEY" > key.yaml
-  - kubectl delete secret --ignore-not-found=true registry.gitlab.com
-  - kubectl create secret docker-registry registry.gitlab.com --docker-server=https://registry.gitlab.com --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWD --docker-email=$REGISTRY_EMAIL
+  - kubectl --kubeconfig="key.yaml" delete secret --ignore-not-found=true registry.gitlab.com
+  - kubectl --kubeconfig="key.yaml" create secret docker-registry registry.gitlab.com --docker-server=https://registry.gitlab.com --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWD --docker-email=$REGISTRY_EMAIL
   - |
     cat <<EOF > patch.yaml
     spec:
